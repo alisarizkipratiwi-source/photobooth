@@ -9,11 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Fabric.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <!-- CSS External -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Hero Menari (animasi) -->
+        <!-- Hero Menari -->
         <div class="hero-dance" id="heroDance">
             <div class="hero-character" id="heroCharacter">🐟💃</div>
             <div class="hero-text">Ayo Hias Strip Fotomu!</div>
@@ -51,9 +52,7 @@
                 <!-- Stiker Library (Default) -->
                 <div class="control-section">
                     <h3><i class="fas fa-smile-wink"></i> Stiker Lucu</h3>
-                    <div class="sticker-panel" id="defaultStickers">
-                        <!-- Stiker default emoji akan diisi oleh JS -->
-                    </div>
+                    <div class="sticker-panel" id="defaultStickers"></div>
                 </div>
 
                 <!-- Stiker Custom (Upload) -->
@@ -61,9 +60,7 @@
                     <h3><i class="fas fa-images"></i> Stiker Custom</h3>
                     <input type="file" id="uploadStickerInput" accept="image/*" style="display:none">
                     <button id="addCustomStickerBtn" class="btn small"><i class="fas fa-plus-circle"></i> Upload Stiker Baru</button>
-                    <div class="sticker-panel" id="customStickersPanel">
-                        <!-- Stiker custom akan muncul di sini -->
-                    </div>
+                    <div class="sticker-panel" id="customStickersPanel"></div>
                 </div>
 
                 <!-- Filter untuk Objek Aktif -->
@@ -101,6 +98,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- JS External -->
+    <script src="js/script.js"></script>
 </body>
 </html>
