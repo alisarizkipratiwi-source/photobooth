@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi Fabric Canvas
     const canvas = new fabric.Canvas('photo-strip-canvas');
     canvas.setDimensions({ width: 500, height: 700 });
     canvas.backgroundColor = '#fff8f0';
     canvas.renderAll();
 
-    // Elemen DOM
+    // === ELEMEN DOM ===
     const video = document.getElementById('videoFeed');
     const videoContainer = document.getElementById('video-container');
     const openCameraBtn = document.getElementById('openCameraBtn');
@@ -24,95 +23,207 @@ document.addEventListener('DOMContentLoaded', () => {
     const addCustomStickerBtn = document.getElementById('addCustomStickerBtn');
     const themeBtns = document.querySelectorAll('.theme-btn');
     const heroCharacter = document.getElementById('heroCharacter');
+    const heroDance = document.getElementById('heroDance');
+    const fillActiveFrameBtn = document.getElementById('fillActiveFrameBtn');
+    const layoutBtns = document.querySelectorAll('.layout-btn');
 
     let currentStream = null;
+    let activeFrame = null;          // frame yang dipilih
+    let frames = [];                 // menyimpan objek frame (fabric.Rect)
+    let currentLayout = '3';         // default 3 foto
 
-    // ---------- Stiker Default (Emoji Lucu) ----------
+    // ========== LAYOUT DEFINISI ==========
+    const layoutDefinitions = {
+        '1': { rows: 1, cols: 1, margin: 40, gap: 0 },
+        '2': { rows: 2, cols: 1, margin: 40, gap: 20 },
+        '3': { rows: 3, cols: 1, margin: 40, gap: 20 },
+        '4': { rows: 2, cols: 2, margin: 40, gap: 20 },
+        '6': { rows: 2, cols: 3, margin: 40, gap: 15 }
+    };
+
+    // Fungsi membuat frame berdasarkan layout
+    function createLayout(layoutKey) {
+        canvas.clear(); // hapus semua objek
+        canvas.backgroundColor = '#fff8f0';
+        frames = [];
+        activeFrame = null;
+
+        const def = layoutDefinitions[layoutKey];
+        if (!def) return;
+
+        const { rows, cols, margin, gap } = def;
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const frameWidth = (canvasWidth - 2 * margin - (cols - 1) * gap) / cols;
+        const frameHeight = (canvasHeight - 2 * margin - (rows - 1) * gap) / rows;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const left = margin + c * (frameWidth + gap);
+                const top = margin + r * (frameHeight + gap);
+                const rect = new fabric.Rect({
+                    left: left,
+                    top: top,
+                    width: frameWidth,
+                    height: frameHeight,
+                    fill: 'rgba(240,240,240,0.5)',
+                    stroke: '#ffaa66',
+                    strokeWidth: 3,
+                    rx: 12,
+                    ry: 12,
+                    selectable: true,
+                    hasControls: false,
+                    hasBorders: true,
+                    lockMovementX: true,
+                    lockMovementY: true,
+                    lockRotation: true,
+                    lockScalingX: true,
+                    lockScalingY: true,
+                    data: { type: 'frame', index: frames.length }
+                });
+                canvas.add(rect);
+                frames.push(rect);
+            }
+        }
+
+        // tambahkan teks instruksi
+        const instruction = new fabric.Text('Klik frame lalu klik "Isi ke Frame Aktif"', {
+            fontSize: 14,
+            fontFamily: 'Quicksand',
+            fill: '#b45f2b',
+            left: canvas.width / 2,
+            top: canvas.height - 25,
+            originX: 'center',
+            selectable: false,
+            hasControls: false,
+            evented: false
+        });
+        canvas.add(instruction);
+        canvas.renderAll();
+
+        // event listener untuk memilih frame
+        canvas.on('selection:created', onObjectSelected);
+        canvas.on('selection:updated', onObjectSelected);
+    }
+
+    function onObjectSelected(e) {
+        const selected = e.selected ? e.selected[0] : null;
+        if (selected && selected.data && selected.data.type === 'frame') {
+            activeFrame = selected;
+            // highlight frame yang aktif
+            frames.forEach(f => f.set('stroke', '#ffaa66'));
+            activeFrame.set('stroke', '#ff4d4d');
+            canvas.renderAll();
+        } else {
+            activeFrame = null;
+            frames.forEach(f => f.set('stroke', '#ffaa66'));
+            canvas.renderAll();
+        }
+    }
+
+    // Fungsi mengisi frame dengan gambar
+    function fillFrameWithImage(imgUrl) {
+        if (!activeFrame) {
+            alert('Pilih frame terlebih dahulu dengan mengkliknya!');
+            return;
+        }
+        // hapus gambar yang sudah ada di frame (jika ada)
+        const objects = canvas.getObjects();
+        const existingImage = objects.find(obj => obj.data && obj.data.frameIndex === activeFrame.data.index);
+        if (existingImage) {
+            canvas.remove(existingImage);
+        }
+
+        fabric.Image.fromURL(imgUrl, (imgObj) => {
+            const frame = activeFrame;
+            const scale = Math.min(frame.width / imgObj.width, frame.height / imgObj.height);
+            imgObj.scale(scale);
+            imgObj.set({
+                left: frame.left + (frame.width - imgObj.width * scale) / 2,
+                top: frame.top + (frame.height - imgObj.height * scale) / 2,
+                originX: 'left',
+                originY: 'top',
+                hasControls: true,
+                selectable: true,
+                data: { type: 'photo', frameIndex: frame.data.index }
+            });
+            canvas.add(imgObj);
+            canvas.renderAll();
+        });
+    }
+
+    // ========== STIKER DEFAULT (EMOJI) ==========
     const defaultStickerList = [
-        '🐟', '🐠', '🐡', '🐙', '🐬', '🐳', '🤠', '🐮', '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐸', '🐒', '🐔', '🐧', '🐦', '🐴', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🕷️', '🦂', '🐢', '🐍', '🦎', '🐙', '🦑', '🦐', '🦀', '🐡', '🐠', '⭐', '❤️', '💖', '✨', '🎈', '🌸', '🌼', '🍭', '🍬', '🍫', '🧸'
+        '🐟', '🐠', '🐡', '🐙', '🐬', '🐳', '🤠', '🐮', '🐶', '🐱', '🐭', '🐹',
+        '🐰', '🦊', '🐻', '🐼', '🐨', '🐸', '🐒', '🐔', '🐧', '🐦', '🐴', '🐝',
+        '🐛', '🦋', '🐌', '🐞', '🐜', '🕷️', '🦂', '🐢', '🐍', '🦎', '🐙', '🦑',
+        '🦐', '🦀', '🐡', '🐠', '⭐', '❤️', '💖', '✨', '🎈', '🌸', '🌼', '🍭',
+        '🍬', '🍫', '🧸', '🌈', '🌟'
     ];
-    // Ambil 24 stiker acak/unik biar ga terlalu panjang
-    const selectedStickers = defaultStickerList.slice(0, 24);
-    selectedStickers.forEach(emoji => {
+    const usedStickers = defaultStickerList.slice(0, 30);
+    usedStickers.forEach(emoji => {
         const stickerDiv = document.createElement('div');
         stickerDiv.className = 'sticker-item';
         stickerDiv.innerText = emoji;
         stickerDiv.style.fontSize = '2.8rem';
         stickerDiv.addEventListener('click', () => {
-            addTextSticker(emoji);
+            const textObj = new fabric.Text(emoji, {
+                fontSize: 60,
+                fontFamily: 'Segoe UI Emoji, "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+                originX: 'center',
+                originY: 'center',
+                left: canvas.width / 2,
+                top: canvas.height / 2,
+                shadow: 'rgba(0,0,0,0.2) 2px 2px 5px',
+                hasControls: true,
+                hasBorders: true,
+                selectable: true
+            });
+            canvas.add(textObj);
+            canvas.setActiveObject(textObj);
+            canvas.renderAll();
         });
         defaultStickersDiv.appendChild(stickerDiv);
     });
 
-    function addTextSticker(emoji) {
-        const textObj = new fabric.Text(emoji, {
-            fontSize: 60,
-            fontFamily: 'Segoe UI Emoji',
-            originX: 'center',
-            originY: 'center',
-            left: canvas.width / 2,
-            top: canvas.height / 2,
-            shadow: 'rgba(0,0,0,0.2) 2px 2px 5px',
-            hasControls: true,
-            hasBorders: true,
-            selectable: true
-        });
-        canvas.add(textObj);
-        canvas.setActiveObject(textObj);
-        canvas.renderAll();
-    }
-
-    // ----- Stiker Custom (Upload gambar) -----
-    let customStickerList = []; // simpan dataURL untuk panel
-
-    addCustomStickerBtn.addEventListener('click', () => {
-        uploadStickerInput.click();
-    });
-
+    // ========== STIKER CUSTOM ==========
+    addCustomStickerBtn.addEventListener('click', () => uploadStickerInput.click());
     uploadStickerInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(event) {
             const imgURL = event.target.result;
-            // Tambah ke panel stiker custom
-            addStickerToPanel(imgURL);
-            // Opsional: langsung tambah ke canvas? user bisa klik nanti
+            const stickerDiv = document.createElement('div');
+            stickerDiv.className = 'sticker-item';
+            const img = document.createElement('img');
+            img.src = imgURL;
+            stickerDiv.appendChild(img);
+            stickerDiv.addEventListener('click', () => {
+                fabric.Image.fromURL(imgURL, (imgObj) => {
+                    imgObj.scaleToWidth(100);
+                    imgObj.set({
+                        left: canvas.width / 2,
+                        top: canvas.height / 2,
+                        originX: 'center',
+                        originY: 'center',
+                        hasControls: true,
+                        selectable: true
+                    });
+                    canvas.add(imgObj);
+                    canvas.setActiveObject(imgObj);
+                    canvas.renderAll();
+                });
+            });
+            customStickersPanel.appendChild(stickerDiv);
         };
         reader.readAsDataURL(file);
         uploadStickerInput.value = '';
     });
 
-    function addStickerToPanel(imgURL) {
-        const stickerDiv = document.createElement('div');
-        stickerDiv.className = 'sticker-item';
-        const img = document.createElement('img');
-        img.src = imgURL;
-        stickerDiv.appendChild(img);
-        stickerDiv.addEventListener('click', () => {
-            fabric.Image.fromURL(imgURL, (imgObj) => {
-                imgObj.scaleToWidth(100);
-                imgObj.set({
-                    left: canvas.width / 2,
-                    top: canvas.height / 2,
-                    originX: 'center',
-                    originY: 'center',
-                    hasControls: true,
-                    selectable: true
-                });
-                canvas.add(imgObj);
-                canvas.setActiveObject(imgObj);
-                canvas.renderAll();
-            });
-        });
-        customStickersPanel.appendChild(stickerDiv);
-        customStickerList.push(imgURL);
-    }
-
-    // ----- Kamera & Capture -----
+    // ========== KAMERA ==========
     openCameraBtn.addEventListener('click', async () => {
         if (currentStream) {
-            // matikan dulu
             currentStream.getTracks().forEach(track => track.stop());
             currentStream = null;
             videoContainer.style.display = 'none';
@@ -137,60 +248,41 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Kamera belum dibuka!');
             return;
         }
-        // Capture dari video
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = video.videoWidth;
         tempCanvas.height = video.videoHeight;
         const ctx = tempCanvas.getContext('2d');
         ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
         const dataURL = tempCanvas.toDataURL('image/jpeg', 0.95);
-        fabric.Image.fromURL(dataURL, (img) => {
-            const maxSize = 280;
-            const scale = Math.min(maxSize / img.width, maxSize / img.height);
-            img.scale(scale);
-            img.set({
-                left: canvas.width / 2,
-                top: canvas.height / 2,
-                originX: 'center',
-                originY: 'center',
-                cornerColor: '#ffaa66',
-                hasControls: true,
-                selectable: true
-            });
-            canvas.add(img);
-            canvas.setActiveObject(img);
-            canvas.renderAll();
-        });
+        fillFrameWithImage(dataURL);
     });
 
-    // Upload Foto dari galeri
+    // Upload foto dari galeri
     uploadPhotoBtn.addEventListener('click', () => uploadPhotoInput.click());
     uploadPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
-            fabric.Image.fromURL(event.target.result, (img) => {
-                const maxSize = 280;
-                const scale = Math.min(maxSize / img.width, maxSize / img.height);
-                img.scale(scale);
-                img.set({
-                    left: canvas.width / 2,
-                    top: canvas.height / 2,
-                    originX: 'center',
-                    originY: 'center',
-                    hasControls: true
-                });
-                canvas.add(img);
-                canvas.setActiveObject(img);
-                canvas.renderAll();
-            });
+            fillFrameWithImage(event.target.result);
         };
         reader.readAsDataURL(file);
         uploadPhotoInput.value = '';
     });
 
-    // Filter untuk objek aktif
+    // Tombol isi frame aktif (bisa juga dari kamera/upload sudah langsung isi)
+    fillActiveFrameBtn.addEventListener('click', () => {
+        // jika ada kamera terbuka, ambil foto? lebih baik upload manual atau capture.
+        // Kita buat pilihan: bisa ambil dari upload saja, atau jika ada kamera hidup, capture.
+        // Di sini kita bisa trigger capture jika kamera hidup.
+        if (currentStream) {
+            captureBtn.click();
+        } else {
+            uploadPhotoBtn.click();
+        }
+    });
+
+    // ========== FILTER ==========
     function applyFilterToObject(obj, filterType) {
         if (!obj || !obj.filters) return;
         obj.filters = [];
@@ -215,8 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 obj.filters.push(new fabric.Image.filters.Contrast({ contrast: 0.4 }));
                 obj.filters.push(new fabric.Image.filters.Brightness({ brightness: 0.1 }));
                 break;
-            default:
-                break;
+            default: break;
         }
         obj.applyFilters();
         canvas.renderAll();
@@ -236,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilterToObject(activeObj, filterVal);
     });
 
-    // Tambah Teks
+    // ========== TEKS ==========
     addTextBtn.addEventListener('click', () => {
         const text = teksInput.value.trim();
         if (text === '') return;
@@ -258,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         teksInput.value = '';
     });
 
-    // Simpan Strip
+    // ========== DOWNLOAD & CLEAR ==========
     downloadBtn.addEventListener('click', () => {
         const dataURL = canvas.toDataURL({
             format: 'png',
@@ -271,23 +362,27 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
     });
 
-    // Bersihkan Canvas
     clearCanvasBtn.addEventListener('click', () => {
-        canvas.clear();
-        canvas.backgroundColor = '#fff8f0';
-        canvas.renderAll();
+        createLayout(currentLayout);
     });
 
-    // ---------- TEMA (Akuarium, Cowboy, Imut) ----------
+    // ========== LAYOUT SWITCH ==========
+    layoutBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const layout = btn.getAttribute('data-layout');
+            currentLayout = layout;
+            createLayout(layout);
+            layoutBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // ========== TEMA ==========
     function setTheme(theme) {
-        // ubah background canvas + hero
-        let bgColor = '#fff8f0';
-        let bgImage = null;
         let heroEmoji = '🐟💃';
         let heroTextBg = '#ffffff';
         switch (theme) {
             case 'aquarium':
-                bgColor = '#c9e9ff';
                 heroEmoji = '🐠🐟💃';
                 heroTextBg = '#c3e2f7';
                 canvas.setBackgroundColor(new fabric.Pattern({
@@ -310,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }), () => canvas.renderAll());
                 break;
             case 'cowboy':
-                bgColor = '#e0c8a0';
                 heroEmoji = '🤠🐎💃';
                 heroTextBg = '#e0b87a';
                 canvas.setBackgroundColor(new fabric.Pattern({
@@ -335,7 +429,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }), () => canvas.renderAll());
                 break;
             case 'cute':
-                bgColor = '#ffe4ec';
                 heroEmoji = '🎀🐣💖💃';
                 heroTextBg = '#ffe0e7';
                 canvas.setBackgroundColor(new fabric.Pattern({
@@ -361,10 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
             default: break;
         }
         if (theme !== 'aquarium' && theme !== 'cowboy' && theme !== 'cute') {
-            canvas.setBackgroundColor(bgColor, () => canvas.renderAll());
+            canvas.setBackgroundColor('#fff8f0', () => canvas.renderAll());
         }
         heroCharacter.innerText = heroEmoji;
-        document.querySelector('.hero-dance').style.background = heroTextBg;
+        heroDance.style.background = heroTextBg;
         canvas.renderAll();
     }
 
@@ -377,10 +470,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Default tema akuarium
+    // Inisialisasi layout default 3 foto
+    createLayout('3');
+    document.querySelector('.layout-btn[data-layout="3"]').classList.add('active');
     setTheme('aquarium');
     document.querySelector('[data-theme="aquarium"]').classList.add('active');
-
-    // Tambahkan instruksi awal
-    console.log('Photo Booth Siap!');
 });
