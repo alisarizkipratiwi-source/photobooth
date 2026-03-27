@@ -14,15 +14,11 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Hero Menari -->
         <div class="hero-dance" id="heroDance">
             <div class="hero-character" id="heroCharacter">🐟💃</div>
             <div class="hero-text">Ayo Hias Strip Fotomu!</div>
         </div>
-
-        <!-- Dashboard Utama -->
         <div class="dashboard">
-            <!-- Kiri: Editor Canvas -->
             <div class="editor-area">
                 <div class="canvas-wrapper">
                     <canvas id="photo-strip-canvas" width="500" height="700"></canvas>
@@ -32,9 +28,19 @@
                     <button id="clearCanvasBtn" class="btn warning"><i class="fas fa-trash-alt"></i> Bersihkan Semua</button>
                 </div>
             </div>
-
-            <!-- Kanan: Kontrol -->
             <div class="controls-area">
+                <!-- Layout Pilihan -->
+                <div class="control-section">
+                    <h3><i class="fas fa-th-large"></i> Pilih Layout Strip</h3>
+                    <div class="layout-buttons">
+                        <button data-layout="1" class="layout-btn">1 Foto</button>
+                        <button data-layout="2" class="layout-btn">2 Foto</button>
+                        <button data-layout="3" class="layout-btn">3 Foto</button>
+                        <button data-layout="4" class="layout-btn">4 Foto</button>
+                        <button data-layout="6" class="layout-btn">6 Foto</button>
+                    </div>
+                </div>
+
                 <!-- Input Foto & Kamera -->
                 <div class="control-section">
                     <h3><i class="fas fa-camera"></i> Ambil / Upload Foto</h3>
@@ -47,6 +53,8 @@
                     <div id="video-container" style="display:none; margin-top:10px;">
                         <video id="videoFeed" autoplay playsinline muted style="width:100%; max-height:150px; background:#000;"></video>
                     </div>
+                    <button id="fillActiveFrameBtn" class="btn small" style="margin-top:8px;"><i class="fas fa-plus-circle"></i> Isi ke Frame Aktif</button>
+                    <div style="font-size:12px; margin-top:5px;">Klik frame dulu, lalu isi dengan foto</div>
                 </div>
 
                 <!-- Stiker Library (Default) -->
@@ -98,7 +106,6 @@
         </div>
     </div>
 
-    <!-- JS External -->
     <script src="js/script.js"></script>
 </body>
 </html>
